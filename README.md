@@ -1,70 +1,167 @@
-# Getting Started with Create React App
+# Pizarra Colaborativa Simple
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+**Descripción**  
+Esta aplicación permite a múltiples usuarios añadir, editar y eliminar “notas” en una pizarra compartida en tiempo real. Está construida con React y Firebase (Realtime Database, Authentication y Hosting).
 
-## Available Scripts
+---
 
-In the project directory, you can run:
+## 1. Integrantes
 
-### `npm start`
+| Nombre                       | Rol / Contribución                  |
+|------------------------------|-------------------------------------|
+| Jaime Nina Vargas            | Desarrollo frontend, Firebase setup |
+| Miguel Angel Odrillas        | Diseño de UX, validación de reglas  |
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+## 2. Tecnologías utilizadas
 
-### `npm test`
+- **React** (JavaScript, Hooks)  
+- **Firebase**  
+  - Realtime Database  
+  - Authentication (Email/Password)  
+  - Hosting  
+- **Herramientas**  
+  - Node.js & npm  
+  - Firebase CLI  
+  - Visual Studio Code  
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+---
 
-### `npm run build`
+## 3. Requisitos previos
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+- Tener **Node.js** (versión LTS recomendada) y **npm** instalados.  
+- Cuenta de **Google** para acceder a Firebase.  
+- Firebase CLI instalado globalmente:  
+  ```bash
+  npm install -g firebase-tools
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+## 4. Configuración en Firebase Console
+- Accede a Firebase Console.
+- Crea un proyecto llamado pizarra-colaborativa (o tu nombre de proyecto).
+- En Authentication > Método de inicio de sesión, habilita Correo/Contraseña.
+- En Realtime Database, haz clic en Crear base de datos, elige modo Prueba y tu región.
+- En Configuración del proyecto > Tus aplicaciones, agrega una app web y copia las credenciales.
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+## 5. Variables de entorno
+En la raíz de frontend/, crea un archivo .env.local con:
 
-### `npm run eject`
+REACT_APP_FIREBASE_API_KEY=tu_apiKey
+REACT_APP_FIREBASE_AUTH_DOMAIN=tu_authDomain
+REACT_APP_FIREBASE_DATABASE_URL=tu_databaseURL
+REACT_APP_FIREBASE_PROJECT_ID=tu_projectId
+REACT_APP_FIREBASE_STORAGE_BUCKET=tu_storageBucket
+REACT_APP_FIREBASE_MESSAGING_SENDER_ID=tu_messagingSenderId
+REACT_APP_FIREBASE_APP_ID=tu_appId
+Importante: Nunca subas .env.local a tu repositorio público.
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+## 6. Cómo ejecutar localmente
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+- Clona el repositorio:
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+git clone <tu_repo_URL>
+cd pizarra-colaborativa/frontend
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+- Instala dependencias:
 
-## Learn More
+npm install
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+- Inicia la app en modo desarrollo:
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+npm start
 
-### Code Splitting
+- Abre http://localhost:3000 en tu navegador.
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
+## 7. Estructura de carpetas
 
-### Analyzing the Bundle Size
+frontend/
+├── public/
+│   └── index.html
+├── src/
+│   ├── components/      # NoteItem.jsx, Navbar.jsx, etc.
+│   ├── pages/           # Login.jsx, Register.jsx, Board.jsx
+│   ├── services/        # auth.js, database.js
+│   ├── styles/          # archivos CSS
+│   ├── firebaseConfig.js
+│   ├── App.js
+│   └── index.js
+├── .env.local
+├── firebase.json
+├── database.rules.json
+├── package.json
+└── README.md
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
+## 8. Reglas de seguridad de Realtime Database
 
-### Making a Progressive Web App
+### Archivo: database.rules.json
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
+{
+  "rules": {
+    "notes": {
+      ".read": "auth != null",
+      ".write": "auth != null",
+      "$noteId": {
+        ".write": "(
+          !data.exists() && newData.child('authorId').val() === auth.uid
+        ) || (
+          data.exists() && data.child('authorId').val() === auth.uid
+        )",
+        "content": {
+          ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 500"
+        },
+        "timestamp": {
+          ".validate": "newData.isNumber() && newData.val() > 0"
+        },
+        "authorId": {
+          ".validate": "(!data.exists() && newData.val() === auth.uid) || (data.exists() && newData.val() === data.val())"
+        },
+        "authorEmail": {
+          ".validate": "(!data.exists() && newData.val() === auth.token.email) || (data.exists() && newData.val() === data.val())"
+        }
+      }
+    }
+  }
+}
 
-### Advanced Configuration
+### Cada regla:
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
+- .read / .write: solo usuarios autenticados.
+- Creación: authorId y authorEmail deben coincidir con el usuario.
+- Edición/Borrado: solo el autor original.
+- Validaciones: content no vacío, máximo 500 caracteres; timestamp número positivo.
 
-### Deployment
+## 9. Despliegue
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
+- Construye tu app:
 
-### `npm run build` fails to minify
+npm run build
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+- Despliega Hosting y Database:
+
+firebase deploy --only hosting,database
+
+- URL pública:
+https://<PROJECT_ID>.web.app
+(Reemplaza <PROJECT_ID> por tu ID de proyecto)
+
+## 10. Mejoras y puntos extra
+
+- Múltiples salas (/rooms/{roomId}/notes).
+- Modo offline con IndexedDB.
+- Notificaciones en tiempo real (toasts).
+- Mejora UI con “post-its” y colores.
+
+## 11. Checklist para entrega
+
+- Variables de entorno configuradas (.env.local).
+- Reglas de security publicadas y verificadas.
+- Rutas de React protegidas con React Router.
+- CRUD de notas funcionando en tiempo real.
+- Deploy exitoso en Firebase Hosting.
+- README completo con todas las secciones.
+
+## 12. Recursos adicionales
+
+- React: https://es.reactjs.org/
+- Firebase Realtime Database: https://firebase.google.com/docs/database
+- Firebase Auth: https://firebase.google.com/docs/auth
+- Firebase Hosting: https://firebase.google.com/docs/hosting
