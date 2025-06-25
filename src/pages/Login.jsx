@@ -2,67 +2,208 @@
 
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-// Función de login que creamos en services/auth.js
 import { login } from '../services/auth';
+import bannerImage from '../assets/banner2.jpg';
 
 export default function Login() {
-  // Estados locales para controlar los inputs
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState(null);
+  const [loading, setLoading] = useState(false);
 
-  // Hook de React Router para redirigir
   const navigate = useNavigate();
 
-  // Función que se llama al enviar el formulario
   const handleSubmit = async (e) => {
-    e.preventDefault();         // Evita recargar la página
-    setError(null);             // Reset de errores
+    e.preventDefault();
+    setError(null);
 
+    if (email.trim() === '') {
+      setError('Por favor, introduce tu correo electrónico.');
+      return;
+    }
+    if (password.trim() === '') {
+      setError('Por favor, introduce tu contraseña.');
+      return;
+    }
+
+    setLoading(true);
     try {
       await login(email, password);
-      // Si todo va bien, redirige al tablero
-      navigate('/rooms');
+      navigate('/rooms', { replace: true });
     } catch (err) {
-      // Firebase devuelve mensajes en inglés; aquí los traducimos o mostramos
       setError('Usuario o contraseña incorrectos');
-      console.error(err);
+      console.error('Error en login:', err);
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <div className="auth-container">
-      <h2>Iniciar Sesión</h2>
-      <form onSubmit={handleSubmit}>
-        <label>
-          Correo electrónico:
-          <input
-            type="email"
-            value={email}
-            onChange={e => setEmail(e.target.value)}
-            required
+    <div className="flex flex-col md:flex-row h-screen">
+      {/* Sección izquierda */}
+      <div className="w-full md:w-1/2 bg-gradient-to-br from-orange-200 to-orange-400 flex items-center justify-center text-black p-10">
+        <div className="text-center">
+          <h1 className="text-4xl text-orange-700 font-bold mb-5">
+            Bienvenido a Pizarra Interactiva
+          </h1>
+          <img
+            src={bannerImage}
+            alt="Imagen bienvenida"
+            className="mx-auto mt-6 rounded-lg shadow-lg max-w-full h-auto"
           />
-        </label>
+          <p className="text-lg mb-3 mt-4">
+            Conéctate en tiempo real con tus compañeros. Crea salas, añade notas y mantente sincronizado.
+          </p>
+          <p className="text-lg mb-3">
+            ¿No tienes cuenta?{' '}
+            <Link to="/register" className="underline text-orange-700 hover:text-orange-900">
+              Regístrate aquí
+            </Link>
+          </p>
+        </div>
+      </div>
 
-        <label>
-          Contraseña:
-          <input
-            type="password"
-            value={password}
-            onChange={e => setPassword(e.target.value)}
-            required
-            minLength={6}
-          />
-        </label>
+      {/* Sección derecha: formulario con animación, centrado */}
+      <div className="w-full md:w-1/2 bg-gray-900 flex items-center justify-center relative overflow-hidden">
+        {/* Estilos CSS para la animación de borde */}
+        <style>
+          {`
+            @keyframes rotateBorder {
+              0% { transform: rotate(0deg); }
+              100% { transform: rotate(360deg); }
+            }
+            /* Contenedor que gira el borde */
+            .animated-border::before,
+            .animated-border::after {
+              content: '';
+              position: absolute;
+              top: -50%;
+              left: -50%;
+              width: 400px;
+              height: 500px;
+              background: linear-gradient(0deg, transparent, transparent, #ff7e29, #ff7e29, #ff7e29);
+              z-index: 1;
+              transform-origin: bottom right;
+              animation: rotateBorder 7s linear infinite;
+            }
+            .animated-border::after {
+              animation-delay: -3.5s;
+            }
+            /* Caja interior */
+            .inner-box {
+              position: absolute;
+              inset: 5px;
+              padding: 20px;
+              border-radius: 8px;
+              z-index: 2;
+              display: flex;
+              flex-direction: column;
+            }
+            /* Tamaño fijo del wrapper animado */
+            .box1 {
+              position: relative;
+              width: 400px;
+              height: 500px;
+              overflow: hidden;
+            }
+          `}
+        </style>
 
-        {error && <p className="error">{error}</p>}
+        {/* Wrapper del borde animado, centrado */}
+        <div className="animated-border box1 flex items-center justify-center">
+          {/* inner-box contendrá el formulario, centrado dentro de box1 */}
+          <div className="inner-box bg-gray-800 text-center">
+            <h2 className="text-3xl font-bold text-orange-700 mb-6">Iniciar Sesión</h2>
 
-        <button type="submit">Entrar</button>
-      </form>
+            {error && <div className="text-red-500 mb-3">{error}</div>}
 
-      <p>
-        ¿No tienes cuenta? <Link to="/register">Regístrate aquí</Link>
-      </p>
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div className="text-left">
+                <label htmlFor="email" className="block text-gray-200 font-medium mb-1">
+                  Correo electrónico:
+                </label>
+                <input
+                  type="email"
+                  id="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="w-full p-3 rounded bg-gray-700 text-gray-200 border border-orange-700 focus:outline-none focus:ring-2 focus:ring-orange-700"
+                  placeholder="tucorreo@ejemplo.com"
+                  required
+                />
+              </div>
+
+              <div className="text-left">
+                <label htmlFor="password" className="block text-gray-200 font-medium mb-1">
+                  Contraseña:
+                </label>
+                <input
+                  type="password"
+                  id="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="w-full p-3 rounded bg-gray-700 text-gray-200 border border-orange-700 focus:outline-none focus:ring-2 focus:ring-orange-700"
+                  placeholder="Tu contraseña"
+                  minLength={6}
+                  required
+                />
+              </div>
+
+              <div className="flex items-center justify-between text-sm">
+                <label className="text-gray-200 flex items-center">
+                  <input type="checkbox" className="mr-2 accent-orange-600" />
+                  Recordarme
+                </label>
+                <Link to="/forgot-password" className="text-orange-700 hover:underline">
+                  Olvidé mi contraseña
+                </Link>
+              </div>
+
+              <button
+                type="submit"
+                disabled={loading}
+                className={`w-full bg-orange-700 text-white hover:bg-orange-800 font-bold py-3 rounded focus:outline-none focus:ring-2 focus:ring-orange-700 ${
+                  loading ? 'opacity-50 cursor-not-allowed' : ''
+                }`}
+              >
+                {loading ? 'Ingresando...' : 'Iniciar Sesión'}
+              </button>
+            </form>
+
+            <div className="mt-4 text-gray-400">
+              <p>O puedes ingresar con:</p>
+              <div className="flex justify-center space-x-4 mt-3">
+                {/* Botones de login social ilustrativos */}
+                <button
+                  className="bg-red-600 hover:bg-red-700 text-white p-3 rounded-full focus:outline-none"
+                  title="Google"
+                >
+                  G
+                </button>
+                <button
+                  className="bg-blue-600 hover:bg-blue-700 text-white p-3 rounded-full focus:outline-none"
+                  title="Facebook"
+                >
+                  F
+                </button>
+                <button
+                  className="bg-blue-400 hover:bg-blue-500 text-white p-3 rounded-full focus:outline-none"
+                  title="Twitter"
+                >
+                  T
+                </button>
+                <button
+                  className="bg-gray-700 hover:bg-gray-600 text-orange-400 p-3 rounded-full focus:outline-none"
+                  title="GitHub"
+                >
+                  GH
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
     </div>
   );
 }

@@ -1,3 +1,8 @@
+/* Importaciones de Tailwind */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
 body {
   margin: 0;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
@@ -11,3 +16,91 @@ code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
     monospace;
 }
+
+.title-font {
+    font-family: 'Righteous', cursive;
+}
+/* Custom animation for error message and alerts */
+@keyframes fadeInDown {
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+.animate-fade-in-down {
+    animation: fadeInDown 0.3s ease-out forwards;
+}
+/* For 3D hover effect (perspective needed on parent) */
+.perspective-1000 {
+    perspective: 1000px;
+}
+/* Note: The hover:rotate-1 for the card was removed for scale-only in the last HTML demo for a cleaner look. */
+/* If you want rotation, add it back to the card div */
+/* Custom spinner animation */
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+.animate-spin-custom {
+    animation: spin 1s linear infinite;
+}
+/* Custom neon shadow effect - Adjusted for more pronounced glow on hover */
+.shadow-neon-pink {
+    box-shadow: 0 0 5px #ff00ff, 0 0 10px #ff00ff, 0 0 15px #ff00ff, 0 0 20px #ff00ff;
+}
+.hover\:shadow-neon-pink-lg:hover {
+    box-shadow: 0 0 10px #ff00ff, 0 0 20px #ff00ff, 0 0 30px #ff00ff, 0 0 40px #ff00ff, 0 0 50px #ff00ff;
+}
+
+.shadow-neon-blue {
+    box-shadow: 0 0 5px #00ffff, 0 0 10px #00ffff, 0 0 15px #00ffff, 0 0 20px #00ffff;
+}
+.hover\:shadow-neon-blue-lg:hover {
+    box-shadow: 0 0 10px #00ffff, 0 0 20px #00ffff, 0 0 30px #00ffff, 0 0 40px #00ffff, 0 0 50px #00ffff;
+}
+
+/* Gradient text for the title */
+.gradient-text {
+    background-clip: text;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+/* Animated background container styles (if you choose to implement this with CSS/JS) */
+#animated-background {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: -1;
+    background-size: 400% 400%; /* Larger background to animate */
+    animation: gradient-animation 10s ease infinite; /* Smooth, continuous loop */
+    transition: background-image 1s ease-in-out; /* Smooth transition between gradients */
+}
+
+/* Keyframes for background animation */
+@keyframes gradient-animation {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+}
+
+/* Base body styles, typically in index.css or global CSS */
+body {
+    background-color: #000; /* Fallback for animated background */
+    overflow: hidden; /* Prevent scrollbar due to background animation */
+    /* Add the following to ensure full body height for flex centering */
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+}
+
+
+
