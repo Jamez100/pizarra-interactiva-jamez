@@ -1,78 +1,52 @@
 // src/services/database.js
 
-// Importamos la instancia de la base de datos
 import { database } from '../firebaseConfig';
-
-// Importamos las funciones de Realtime Database que vamos a usar
 import {
   ref,
   push,
   set,
   onValue,
+  onChildAdded,
   remove,
   update
 } from 'firebase/database';
+import { auth } from '../firebaseConfig'; // Para comparar auth.currentUser
 
 /**
- * addNote(content, user)
- * Agrega una nota al nodo raíz '/notes' con ID generado automáticamente.
+ * Funciones básicas de notas en /notes
  */
 export const addNote = async (content, user) => {
-  // 1. Referencia al nodo 'notes'
   const notesRef = ref(database, 'notes');
-  // 2. Crea un nuevo subnodo con clave única
   const newNoteRef = push(notesRef);
-  // 3. Escribe los datos de la nota
   await set(newNoteRef, {
-    authorId: user.uid,
+    authorId:    user.uid,
     authorEmail: user.email,
     content,
-    timestamp: Date.now()
+    timestamp:   Date.now()
   });
 };
 
-/**
- * subscribeToNotes(callback)
- * Se suscribe a cambios en '/notes' y llama a callback con el array de notas.
- */
 export const subscribeToNotes = (callback) => {
   const notesRef = ref(database, 'notes');
-  // onValue dispara al cargar y en cada cambio de datos
-  return onValue(notesRef, snapshot => {
-    const data = snapshot.val() || {};
-    // Convertimos el objeto en un array de notas
-    const notes = Object.entries(data).map(([id, note]) => ({
-      id,
-      ...note
-    }));
-    callback(notes);
+  return onValue(notesRef, snap => {
+    const data = snap.val() || {};
+    const arr = Object.entries(data).map(([id,n]) => ({ id, ...n }));
+    callback(arr);
   });
 };
 
-/**
- * deleteNote(noteId, currentUserId)
- * Elimina la nota si el usuario actual es su autor.
- */
-export const deleteNote = async (noteId, currentUserId) => {
-  const noteRef = ref(database, `notes/${noteId}`);
-  // Para mayor seguridad, aquí podrías leer antes para validar autorId
-  await remove(noteRef);
+export const deleteNote = async (noteId) => {
+  await remove(ref(database, `notes/${noteId}`));
 };
 
-/**
- * editNote(noteId, newContent, currentUserId)
- * Actualiza el contenido de una nota.
- */
-export const editNote = async (noteId, newContent, currentUserId) => {
-  const noteRef = ref(database, `notes/${noteId}`);
-  await update(noteRef, { content: newContent });
+export const editNote = async (noteId, newContent) => {
+  await update(ref(database, `notes/${noteId}`), { content: newContent });
 };
 
-/* ———————————————— Opcionales: Salas (rooms) ———————————————— */
+/* ————————— Opcional: Múltiples Salas ————————— */
 
 /**
- * createRoom(name)
- * Crea una sala nueva en '/rooms' y devuelve su ID.
+ * Crea una nueva sala en /rooms y devuelve su ID
  */
 export const createRoom = async (name) => {
   const roomsRef = ref(database, 'rooms');
@@ -81,36 +55,56 @@ export const createRoom = async (name) => {
     name,
     createdAt: Date.now()
   });
-  return newRoomRef.key; // Devuelve el ID generado de la sala
+  return newRoomRef.key;
 };
 
 /**
- * addNoteToRoom(roomId, content, user)
- * Agrega una nota a la sala indicada.
+ * Escucha todas las salas y devuelve un array {id, name, createdAt}
  */
-export const addNoteToRoom = async (roomId, content, user) => {
-  const notesInRoomRef = ref(database, `rooms/${roomId}/notes`);
-  const newNoteRef = push(notesInRoomRef);
-  await set(newNoteRef, {
-    authorId: user.uid,
-    authorEmail: user.email,
-    content,
-    timestamp: Date.now()
+export const subscribeToRooms = (callback) => {
+  const roomsRef = ref(database, 'rooms');
+  return onValue(roomsRef, snap => {
+    const data = snap.val() || {};
+    const arr = Object.entries(data).map(([id,r]) => ({ id, ...r }));
+    callback(arr);
   });
 };
 
 /**
- * subscribeToRoomNotes(roomId, callback)
- * Escucha las notas de una sala específica.
+ * Agrega una nota a la sala indicada en /rooms/{roomId}/notes
  */
-export const subscribeToRoomNotes = (roomId, callback) => {
-  const notesInRoomRef = ref(database, `rooms/${roomId}/notes`);
-  return onValue(notesInRoomRef, snapshot => {
-    const data = snapshot.val() || {};
-    const notes = Object.entries(data).map(([id, note]) => ({
-      id,
-      ...note
-    }));
-    callback(notes);
+export const addNoteToRoom = async (roomId, content, user) => {
+  const refRoomNotes = ref(database, `rooms/${roomId}/notes`);
+  const newNote = push(refRoomNotes);
+  await set(newNote, {
+    authorId:    user.uid,
+    authorEmail: user.email,
+    content,
+    timestamp:   Date.now()
+  });
+};
+
+/**
+ * Suscribe a las notas de una sala y notifica sólo nuevos hijos
+ */
+export const subscribeToRoomNotesWithNotify = (roomId, setCallback, notifyFn) => {
+  const path = roomId 
+    ? `rooms/${roomId}/notes`
+    : 'notes';
+  const notesRef = ref(database, path);
+
+  // 1) Estado inicial y actualizaciones completas
+  onValue(notesRef, snap => {
+    const data = snap.val() || {};
+    const arr = Object.entries(data).map(([id,n]) => ({ id, ...n }));
+    setCallback(arr);
+  });
+
+  // 2) Sólo nuevas notas
+  return onChildAdded(notesRef, snap => {
+    const note = { id: snap.key, ...snap.val() };
+    if (note.authorId !== auth.currentUser.uid) {
+      notifyFn(note);
+    }
   });
 };

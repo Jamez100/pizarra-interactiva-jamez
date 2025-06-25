@@ -1,11 +1,37 @@
+
 {
   "rules": {
+    "rooms": {
+      ".read":  "auth != null",
+      ".write": "auth != null",
+      "$roomId": {
+        ".validate": "newData.hasChildren(['name','createdAt'])",
+        "notes": {
+          ".read":  "auth != null",
+          ".write": "auth != null",
+          "$noteId": {
+            ".write": "(!data.exists() && newData.child('authorId').val() === auth.uid) || (data.exists() && data.child('authorId').val() === auth.uid)",
+            "content": {
+              ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 500"
+            },
+            "timestamp": {
+              ".validate": "newData.isNumber() && newData.val() > 0"
+            },
+            "authorId": {
+              ".validate": "(!data.exists() && newData.val() === auth.uid) || (data.exists() && newData.val() === data.val())"
+            },
+            "authorEmail": {
+              ".validate": "(!data.exists() && newData.val() === auth.token.email) || (data.exists() && newData.val() === data.val())"
+            }
+          }
+        }
+      }
+    },
     "notes": {
-      ".read": "auth != null",
+      ".read":  "auth != null",
       ".write": "auth != null",
       "$noteId": {
         ".write": "(!data.exists() && newData.child('authorId').val() === auth.uid) || (data.exists() && data.child('authorId').val() === auth.uid)",
-
         "content": {
           ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 500"
         },

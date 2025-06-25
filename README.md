@@ -71,56 +71,10 @@ npm start
 
 - Abre http://localhost:3000 en tu navegador.
 
-## 7. Estructura de carpetas
-
-frontend/
-├── public/
-│   └── index.html
-├── src/
-│   ├── components/      # NoteItem.jsx, Navbar.jsx, etc.
-│   ├── pages/           # Login.jsx, Register.jsx, Board.jsx
-│   ├── services/        # auth.js, database.js
-│   ├── styles/          # archivos CSS
-│   ├── firebaseConfig.js
-│   ├── App.js
-│   └── index.js
-├── .env.local
-├── firebase.json
-├── database.rules.json
-├── package.json
-└── README.md
 
 ## 8. Reglas de seguridad de Realtime Database
 
-### Archivo: database.rules.json
-
-{
-  "rules": {
-    "notes": {
-      ".read": "auth != null",
-      ".write": "auth != null",
-      "$noteId": {
-        ".write": "(
-          !data.exists() && newData.child('authorId').val() === auth.uid
-        ) || (
-          data.exists() && data.child('authorId').val() === auth.uid
-        )",
-        "content": {
-          ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 500"
-        },
-        "timestamp": {
-          ".validate": "newData.isNumber() && newData.val() > 0"
-        },
-        "authorId": {
-          ".validate": "(!data.exists() && newData.val() === auth.uid) || (data.exists() && newData.val() === data.val())"
-        },
-        "authorEmail": {
-          ".validate": "(!data.exists() && newData.val() === auth.token.email) || (data.exists() && newData.val() === data.val())"
-        }
-      }
-    }
-  }
-}
+- Archivo: database.rules.json
 
 ### Cada regla:
 

@@ -22,7 +22,7 @@ export default function Login() {
     try {
       await login(email, password);
       // Si todo va bien, redirige al tablero
-      navigate('/');
+      navigate('/rooms');
     } catch (err) {
       // Firebase devuelve mensajes en inglés; aquí los traducimos o mostramos
       setError('Usuario o contraseña incorrectos');

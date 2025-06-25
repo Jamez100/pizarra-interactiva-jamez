@@ -1,57 +1,66 @@
 // src/App.js
 
 import React, { useState, useEffect } from 'react';
-// Importaciones de React Router
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 
-// Páginas
-import Login from './pages/Login';
+import Login    from './pages/Login';
 import Register from './pages/Register';
-import Board from './pages/Board';
+import Rooms    from './pages/Rooms';
+import Board    from './pages/Board';
 
-// Servicio de autenticación
 import { onAuthChange } from './services/auth';
 
+import { ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
+
 function App() {
-  // Estado para guardar el usuario actual; null = no autenticado
-  const [user, setUser] = useState(null);
-  // Estado de carga para esperar la inicialización de Firebase Auth
-  const [checkingStatus, setCheckingStatus] = useState(true);
+  const [user, setUser]             = useState(null);
+  const [checkingStatus, setStatus] = useState(true);
 
   useEffect(() => {
-    // Nos suscribimos a cambios de auth
-    const unsubscribe = onAuthChange((user) => {
-      setUser(user);
-      setCheckingStatus(false);
+    const unsub = onAuthChange(u => {
+      setUser(u);
+      setStatus(false);
     });
-    // Cleanup al desmontar
-    return () => unsubscribe();
+    return () => unsub();
   }, []);
 
-  // Mientras verifica el estado, podemos mostrar un mensaje
-  if (checkingStatus) {
-    return <p>Cargando aplicación...</p>;
-  }
+  if (checkingStatus) return <p>Cargando aplicación...</p>;
 
   return (
     <BrowserRouter>
       <Routes>
-        {/* Rutas públicas: si ya hay user, redirige al tablero */}
+        {/* Ruta raíz condicional */}
+        <Route
+          path="/"
+          element={user ? <Navigate to="/rooms" replace /> : <Login />}
+        />
+
+        {/* Rutas públicas */}
         <Route
           path="/login"
-          element={!user ? <Login /> : <Navigate to="/" replace />}
+          element={!user ? <Login /> : <Navigate to="/rooms" replace />}
         />
         <Route
           path="/register"
-          element={!user ? <Register /> : <Navigate to="/" replace />}
+          element={!user ? <Register /> : <Navigate to="/rooms" replace />}
         />
 
-        {/* Ruta privada: tablero; si no está autenticado, va a login */}
+        {/* Rutas privadas */}
         <Route
-          path="/"
+          path="/rooms"
+          element={user ? <Rooms user={user} /> : <Navigate to="/login" replace />}
+        />
+        <Route
+          path="/rooms/:roomId"
           element={user ? <Board user={user} /> : <Navigate to="/login" replace />}
         />
+
+        {/* Wildcard */}
+        <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
+
+      <ToastContainer position="top-right" autoClose={3000} />
     </BrowserRouter>
   );
 }
